@@ -1,4 +1,9 @@
+// const { response } = require('express');
 const express = require('express');
+// const { read } = require('fs');
+
+const fs = require('fs').promises;
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -9,6 +14,26 @@ const PORT = '3000';
 // não remova esse endpoint, e para o avaliador funcionar
 app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
+});
+
+const talkersPath = path.resolve(__dirname, './talker.json');
+
+const readFile = async () => {
+  try {
+const data = await fs.readFile(talkersPath);
+return JSON.parse(data);
+  } catch (error) {
+console.log(`Arquivo não pode ser lido: ${error}`);
+  }
+};
+
+app.get('/talker', async (request, response) => {
+  try {
+    const talkers = await readFile();
+    return response.status(200).json(talkers);
+  } catch (error) {
+    return response.status(500).send({ message: error.message });
+  }
 });
 
 app.listen(PORT, () => {
