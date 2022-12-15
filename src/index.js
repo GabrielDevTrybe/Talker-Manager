@@ -20,10 +20,10 @@ const talkersPath = path.resolve(__dirname, './talker.json');
 
 const readFile = async () => {
   try {
-const data = await fs.readFile(talkersPath);
-return JSON.parse(data);
+    const data = await fs.readFile(talkersPath);
+    return JSON.parse(data);
   } catch (error) {
-console.log(`Arquivo não pode ser lido: ${error}`);
+    console.log(`Arquivo não pode ser lido: ${error}`);
   }
 };
 
@@ -34,6 +34,13 @@ app.get('/talker', async (request, response) => {
   } catch (error) {
     return response.status(500).send({ message: error.message });
   }
+});
+
+app.get('/talker/:id', async (request, response) => {
+  const talkers = await readFile();
+  const talker = talkers.find(({ id }) => id === Number(request.params.id));
+  if (!talker) return response.status(404).send({ message: 'Pessoa palestrante não encontrada' });
+  return response.status(200).json(talker); 
 });
 
 app.listen(PORT, () => {
