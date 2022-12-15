@@ -4,6 +4,7 @@ const express = require('express');
 
 const fs = require('fs').promises;
 const path = require('path');
+const generateToken = require('./token');
 
 const app = express();
 app.use(express.json());
@@ -41,6 +42,17 @@ app.get('/talker/:id', async (request, response) => {
   const talker = talkers.find(({ id }) => id === Number(request.params.id));
   if (!talker) return response.status(404).send({ message: 'Pessoa palestrante não encontrada' });
   return response.status(200).json(talker); 
+});
+
+app.post('/login', (request, response) => {
+  const { email, password } = request.body;
+
+  if ([email, password].includes(undefined)) {
+    return response.status(401).json({ message: 'Campos ausentes!' });
+  }
+  
+  const token = generateToken();
+  return response.status(200).json({ token });
 });
 
 app.listen(PORT, () => {
