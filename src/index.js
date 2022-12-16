@@ -1,13 +1,18 @@
 // const { response } = require('express');
+const crypto = require('crypto');
 const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
-const validateEmail = require('./validateEmail');
-const validatePassword = require('./validatePassword');
 
-// const { read } = require('fs');
+const talkersPath = path.resolve(__dirname, './talker.json');
 
-const generateToken = require('./token');
+const {
+  validateToken,
+  validateName, 
+  validateAge, 
+  validateTalk, 
+  verifyRate,
+ } = require('./middlewares/verifyTalkers');
 
 const app = express();
 app.use(express.json());
@@ -19,8 +24,6 @@ const PORT = '3000';
 app.get('/', (_request, response) => {
   response.status(HTTP_OK_STATUS).send();
 });
-
-const talkersPath = path.resolve(__dirname, './talker.json');
 
 const readFile = async () => {
   try {
@@ -47,16 +50,41 @@ app.get('/talker/:id', async (request, response) => {
   return response.status(200).json(talker);
 });
 
-app.post('/login', validatePassword, validateEmail, (request, response) => {
+app.post('/login', (request, response) => {
   const { email, password } = request.body;
+  const token = crypto.randomBytes(8).toString('hex');
+  const REGEX = /\S+@\S+\.\S+/;
 
-  if ([email, password].includes(undefined)) {
-    return response.status(401).json({ message: 'Campos ausentes!' });
+  if (!email) {
+    return response.status(400).json({ message: 'O campo "email" é obrigatório' });
   }
-
-  const token = generateToken();
+  if (!REGEX.test(email)) {
+    return response.status(400).json({ message: 'O "email" deve ter o formato "email@email.com"' });
+  }
+  if (!password) {
+    return response.status(400).json({ message: 'O campo "password" é obrigatório' });
+  }
+  if (password.length < 4) {
+    return response.status(400).json({ message: 'O "password" deve ter pelo menos 6 caracteres' });
+  }
   return response.status(200).json({ token });
 });
+
+app.post('/talker',
+ validateToken, validateName, validateAge, validateTalk, verifyRate, async (request, response) => {
+    const { name, age, talk } = request.body;
+    const talkers = await readFile();
+    const newTalker = {
+      name,
+      age,
+      id: talkers[talkers.length - 1].id + 1,
+      talk,
+    };
+
+    const newTalkers = JSON.stringify([...talkers, newTalker]);
+    await fs.writeFile(talkersPath, (newTalkers));
+    return response.status(201).json(newTalker);
+}); 
 
 app.listen(PORT, () => {
   console.log('Online');
