@@ -8,11 +8,11 @@ const talkersPath = path.resolve(__dirname, './talker.json');
 
 const {
   validateToken,
-  validateName, 
-  validateAge, 
-  validateTalk, 
+  validateName,
+  validateAge,
+  validateTalk,
   verifyRate,
- } = require('./middlewares/verifyTalkers');
+} = require('./middlewares/verifyTalkers');
 
 const app = express();
 app.use(express.json());
@@ -71,7 +71,7 @@ app.post('/login', (request, response) => {
 });
 
 app.post('/talker',
- validateToken, validateName, validateAge, validateTalk, verifyRate, async (request, response) => {
+  validateToken, validateName, validateAge, validateTalk, verifyRate, async (request, response) => {
     const { name, age, talk } = request.body;
     const talkers = await readFile();
     const newTalker = {
@@ -84,19 +84,30 @@ app.post('/talker',
     const newTalkers = JSON.stringify([...talkers, newTalker]);
     await fs.writeFile(talkersPath, (newTalkers));
     return response.status(201).json(newTalker);
-}); 
+  });
 
 app.put('/talker/:id', validateToken, validateName, validateAge, validateTalk, verifyRate,
- async (req, res) => {
-  const { id } = req.params;
-  const { name, age, talk } = req.body;
-  const talkers = await readFile();
-  const index = talkers.findIndex((element) => element.id === Number(id));
-  talkers[index] = { id: Number(id), name, age, talk };
-  const updateTalkers = JSON.stringify(talkers, null, 2);
-  await fs.writeFile(talkersPath, updateTalkers);
+  async (req, res) => {
+    const { id } = req.params;
+    const { name, age, talk } = req.body;
+    const talkers = await readFile();
+    const index = talkers.findIndex((element) => element.id === Number(id));
+    talkers[index] = { id: Number(id), name, age, talk };
+    const updateTalkers = JSON.stringify(talkers, null, 2);
+    await fs.writeFile(talkersPath, updateTalkers);
 
-  res.status(200).json(talkers[index]);
+    res.status(200).json(talkers[index]);
+  });
+
+app.delete('/talker/:id', validateToken,
+async (req, res) => {
+  const { id } = req.params;
+  const talkers = await readFile();
+  const filteredTalkers = talkers.filter((talker) => talker.id !== Number(id));
+  const updatedTalkers = JSON.stringify(filteredTalkers, null, 2);
+  await fs.writeFile(talkersPath, updatedTalkers);
+
+  res.status(204).end();
 });
 
 app.listen(PORT, () => {
