@@ -86,6 +86,19 @@ app.post('/talker',
     return response.status(201).json(newTalker);
 }); 
 
+app.put('/talker/:id', validateToken, validateName, validateAge, validateTalk, verifyRate,
+ async (req, res) => {
+  const { id } = req.params;
+  const { name, age, talk } = req.body;
+  const talkers = await readFile();
+  const index = talkers.findIndex((element) => element.id === Number(id));
+  talkers[index] = { id: Number(id), name, age, talk };
+  const updateTalkers = JSON.stringify(talkers, null, 2);
+  await fs.writeFile(talkersPath, updateTalkers);
+
+  res.status(200).json(talkers[index]);
+});
+
 app.listen(PORT, () => {
   console.log('Online');
 });
